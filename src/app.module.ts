@@ -1,8 +1,9 @@
 import { join } from 'path'; // Ya viene en NODE
 import { Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { PokemonModule } from './pokemon/pokemon.module';
 import { MongooseModule } from '@nestjs/mongoose';
+
+import { PokemonModule } from './pokemon/pokemon.module';
 
 @Module({
   imports: [
