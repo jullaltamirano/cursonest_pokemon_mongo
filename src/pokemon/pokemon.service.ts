@@ -9,6 +9,7 @@ import { Model, isValidObjectId } from 'mongoose';
 import { Pokemon } from './entities/pokemon.entity';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
+import { response } from 'express';
 
 @Injectable()
 export class PokemonService {
@@ -24,16 +25,7 @@ export class PokemonService {
 
       return pokemon;
     } catch (error) {
-      if (error.code === 11000) {
-        throw new BadRequestException(
-          `Pokemon exists in db ${JSON.stringify(error.keyValue)}`,
-        );
-      }
-
-      console.log(error);
-      throw new InternalServerErrorException(
-        'Cant create Pokemon - Check server logs',
-      );
+      this.handleExceptions(error);
     }
   }
 
@@ -70,15 +62,40 @@ export class PokemonService {
     if (updatePokemonDto.name)
       updatePokemonDto.name = updatePokemonDto.name.toLocaleLowerCase();
 
-    const updatedPokemon = await pokemon.updateOne(updatePokemonDto, {
-      new: true,
-    });
-    return updatedPokemon;
-
-    // return pokemon;
+    try {
+      await pokemon.updateOne(updatePokemonDto, { new: true });
+      return { ...pokemon.toJSON(), ...updatePokemonDto };
+    } catch (error) {
+      this.handleExceptions(error);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} pokemon`;
+  async remove(id: string) {
+    // const pokemon = await this.findOne(id);
+
+    //   await pokemon.deleteOne();
+    //   return pokemon;
+
+    // const result = await this.pokemonModel.findByIdAndDelete(id)
+
+    const { deletedCount } = await this.pokemonModel.deleteOne({ id });
+
+    if (deletedCount === 0)
+      throw new BadRequestException(`Pokemon with id "${id}" not found`);
+
+    return;
+  }
+
+  private handleExceptions(error: any) {
+    if (error.code === 11000) {
+      throw new BadRequestException(
+        `Pokemon exists in db ${JSON.stringify(error.keyValue)}`,
+      );
+    }
+
+    console.log(error);
+    throw new InternalServerErrorException(
+      'Cant create Pokemon - Check server logs',
+    );
   }
 }
